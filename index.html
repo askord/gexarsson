@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Гексо-Каркассон</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container"></div>
+    <div id="ui">
+        <div id="menu" class="ui-box">
+            <h1>🎲 Гексо-Каркассон</h1>
+            <div class="players" id="players"></div>
+            <div style="display: flex; gap: 10px; margin: 20px 0;">
+                <input type="text" id="name" placeholder="Имя игрока">
+                <button id="add-player-btn">Добавить</button>
+            </div>
+            <button id="start-game-btn" style="width: 100%;">Начать игру</button>
+        </div>
+
+        <div id="game-ui" style="display:none;">
+            <div id="scores" class="ui-box"></div>
+            <div id="controls" class="ui-box">
+                <div>Ход: <span id="turn">0</span></div>
+                <button class="danger" style="margin-top: 10px;" id="end-game-btn">Завершить</button>
+            </div>
+            <div id="info" class="ui-box">
+                🖱️ Наведите мышь — подсветка места<br>
+                🔄 R или кнопка — повернуть тайл<br>
+                🎯 Клик — разместить тайл
+            </div>
+            <button id="rotate-btn">🔄 Повернуть (R)</button>
+            <div id="tile-preview" class="ui-box">
+                <div style="text-align: center; margin-bottom: 12px; font-weight: bold;">Текущий тайл</div>
+            </div>
+        </div>
+
+        <div id="quiz" class="ui-box" style="display:none;">
+            <h2>🏆 Объект завершён!</h2>
+            <div>Очки: <span id="pts"></span></div>
+            <div>Вопрос <span id="qnum"></span> из 3</div>
+            <div id="question" style="font-size: 1.5em; margin: 20px 0;"></div>
+            <div id="answers"></div>
+        </div>
+    </div>
+
+    <script src="script.js" defer></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('add-player-btn').addEventListener('click', addPlayer);
+            document.getElementById('start-game-btn').addEventListener('click', startGame);
+            document.getElementById('rotate-btn').addEventListener('click', rotateTile);
+            document.getElementById('end-game-btn').addEventListener('click', endGame);
+
+            // Enter в поле имени → добавить игрока
+            document.getElementById('name').addEventListener('keypress', e => {
+                if (e.key === 'Enter') addPlayer();
+            });
+
+            // R на клавиатуре → повернуть
+            window.addEventListener('keydown', e => {
+                if (e.key.toLowerCase() === 'r' && document.getElementById('game-ui').style.display !== 'none') {
+                    rotateTile();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
