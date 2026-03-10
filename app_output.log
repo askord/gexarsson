@@ -1,0 +1,28 @@
+Werkzeug appears to be used in a production deployment. Consider switching to a production web server instead.
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.2:5000
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+Werkzeug appears to be used in a production deployment. Consider switching to a production web server instead.
+ * Debugger is active!
+ * Debugger PIN: 410-907-091
+127.0.0.1 - - [10/Mar/2026 18:48:43] "GET /register HTTP/1.1" 200 -
+127.0.0.1 - - [10/Mar/2026 18:48:44] "[32mPOST /register HTTP/1.1[0m" 302 -
+127.0.0.1 - - [10/Mar/2026 18:48:44] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [10/Mar/2026 18:48:44] "[32mPOST /login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [10/Mar/2026 18:48:45] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [10/Mar/2026 18:48:45] "[32mPOST /create_room HTTP/1.1[0m" 302 -
+127.0.0.1 - - [10/Mar/2026 18:48:45] "GET /game/1 HTTP/1.1" 200 -
+127.0.0.1 - - [10/Mar/2026 18:48:45] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [10/Mar/2026 18:48:45] "GET /socket.io/?EIO=4&transport=polling&t=PpP5804 HTTP/1.1" 200 -
+127.0.0.1 - - [10/Mar/2026 18:48:45] "POST /socket.io/?EIO=4&transport=polling&t=PpP580U&sid=dirOeRZbl3dO5CysAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [10/Mar/2026 18:48:45] "GET /socket.io/?EIO=4&transport=polling&t=PpP580a&sid=dirOeRZbl3dO5CysAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [10/Mar/2026 18:48:45] "GET /socket.io/?EIO=4&transport=polling&t=PpP5818&sid=dirOeRZbl3dO5CysAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [10/Mar/2026 18:48:45] "POST /socket.io/?EIO=4&transport=polling&t=PpP5817&sid=dirOeRZbl3dO5CysAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [10/Mar/2026 18:48:45] "GET /static/tiles/city_one_side.svg HTTP/1.1" 200 -
+127.0.0.1 - - [10/Mar/2026 18:48:45] "GET /static/tiles/road_straight.svg HTTP/1.1" 200 -
+127.0.0.1 - - [10/Mar/2026 18:48:48] "GET /socket.io/?EIO=4&transport=websocket&sid=dirOeRZbl3dO5CysAAAA HTTP/1.1" 200 -

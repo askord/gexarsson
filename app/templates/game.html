@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game: {{ room.name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h2>Room: {{ room.name }}</h2>
+    <div id="game-container" style="display: flex;">
+        <div id="game-board" style="position: relative; width: 800px; height: 600px; border: 1px solid black; background: #fafafa; overflow: hidden;">
+            <div id="hex-grid" style="position: absolute; width: 100%; height: 100%;"></div>
+        </div>
+        <div id="game-ui" style="margin-left: 20px;">
+            <h3>Next Tile</h3>
+            <div id="next-tile-view" style="width: 100px; height: 100px; border: 1px solid #ccc;">
+                <img id="next-tile-img" style="width: 100%; height: 100%;" src="">
+            </div>
+            <button id="rotate-btn">Rotate</button>
+            <hr>
+            <div id="turn-info"></div>
+            <div id="player-list"></div>
+            <div id="message-log" style="height: 200px; overflow-y: scroll; border: 1px solid #eee; margin-top: 10px; width: 250px;"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        var socket = io();
+        var roomId = "{{ room.id }}";
+        var currentTile = null;
+        var board = {};
+        var currentUserId = {{ current_user.id }};
+
+        socket.on('connect', function() {
+            socket.emit('join', {room: roomId});
+        });
+
+        socket.on('game_update', function(data) {
+            console.log('Update:', data);
+            board = data.board;
+            currentTile = data.current_tile;
+            renderBoard();
+            updateNextTile(data);
+
+            var turnInfo = document.getElementById('turn-info');
+            var isMyTurn = data.players[data.current_player_index] === currentUserId;
+            turnInfo.innerHTML = isMyTurn ? "<b>Your turn!</b>" : "Waiting for player " + (data.current_player_index + 1);
+        });
+
+        socket.on('message', function(data) {
+            var log = document.getElementById('message-log');
+            log.innerHTML += '<div>' + data.msg + '</div>';
+            log.scrollTop = log.scrollHeight;
+        });
+
+        socket.on('error', function(data) {
+            alert(data.msg);
+        });
+
+        function renderBoard() {
+            var gridDiv = document.getElementById('hex-grid');
+            gridDiv.innerHTML = '';
+            for (var key in board) {
+                var pos = key.split(',');
+                var q = parseInt(pos[0]);
+                var r = parseInt(pos[1]);
+                var tile = board[key];
+
+                var tileImg = document.createElement('img');
+                tileImg.src = '/static/tiles/' + tile.id + '.svg';
+                tileImg.className = 'tile';
+
+                var x = 50 * (1.5 * q) + 400;
+                var y = 50 * (0.866 * q + 1.732 * r) + 300;
+
+                tileImg.style.left = (x - 50) + 'px';
+                tileImg.style.top = (y - 50) + 'px';
+                tileImg.style.width = '100px';
+                tileImg.style.height = '100px';
+                if(tile.rotation) tileImg.style.transform = 'rotate(' + (tile.rotation * 60) + 'deg)';
+
+                gridDiv.appendChild(tileImg);
+            }
+        }
+
+        function updateNextTile(data) {
+            var img = document.getElementById('next-tile-img');
+            if (currentTile) {
+                img.src = '/static/tiles/' + currentTile.id + '.svg';
+                img.style.display = 'block';
+                if(currentTile.rotation) img.style.transform = 'rotate(' + (currentTile.rotation * 60) + 'deg)';
+                else img.style.transform = 'none';
+            } else {
+                img.style.display = 'none';
+            }
+        }
+
+        document.getElementById('rotate-btn').onclick = function() {
+            socket.emit('rotate_tile', {room: roomId});
+        };
+
+        document.getElementById('game-board').onclick = function(e) {
+            var rect = this.getBoundingClientRect();
+            var x = e.clientX - rect.left - 400;
+            var y = e.clientY - rect.top - 300;
+
+            var q = (2/3 * x) / 50;
+            var r = (-1/3 * x + Math.sqrt(3)/3 * y) / 50;
+
+            var nq = Math.round(q);
+            var nr = Math.round(r);
+
+            socket.emit('place_tile', {room: roomId, q: nq, r: nr});
+        };
+    </script>
+</body>
+</html>
