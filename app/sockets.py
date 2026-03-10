@@ -32,19 +32,22 @@ def on_join(data):
     join_room(str(room_id))
 
     engine = get_engine(room_id)
-    if engine and current_user.is_authenticated:
-        engine.add_player(current_user.id)
-        save_engine(room_id)
+    username = "Guest"
+    if current_user.is_authenticated:
+        username = current_user.username
+        if engine:
+            engine.add_player(current_user.id)
+            save_engine(room_id)
 
     if engine:
         emit('game_update', engine.to_dict(), room=str(room_id))
-    emit('message', {'msg': f'User {current_user.username} joined room {room_id}'}, room=str(room_id))
+    emit('message', {'msg': f'User {username} joined room {room_id}'}, room=str(room_id))
 
 @socketio.on('rotate_tile')
 def on_rotate_tile(data):
     room_id = int(data['room'])
     engine = get_engine(room_id)
-    if engine and engine.players and engine.players[engine.current_player_index] == current_user.id:
+    if engine and engine.players and current_user.is_authenticated and engine.players[engine.current_player_index] == current_user.id:
         engine.rotate_current_tile()
         emit('game_update', engine.to_dict(), room=str(room_id))
 
@@ -53,7 +56,7 @@ def on_place_tile(data):
     room_id = int(data['room'])
     q, r = int(data['q']), int(data['r'])
     engine = get_engine(room_id)
-    if engine:
+    if engine and current_user.is_authenticated:
         success, msg = engine.place_tile(current_user.id, q, r)
         if success:
             save_engine(room_id)

@@ -13,7 +13,7 @@ class GameEngine:
 
         # Initial tile at (0, 0)
         if self.deck:
-            self.board[(0, 0)] = self.deck.pop()
+            self.board[(0, 0)] = self.deck.pop(0)
 
         self.next_turn()
 
@@ -25,7 +25,7 @@ class GameEngine:
 
     def next_turn(self):
         if self.deck:
-            self.current_tile = self.deck.pop()
+            self.current_tile = self.deck.pop(0)
             if self.players:
                 self.current_player_index = (self.current_player_index + 1) % len(self.players)
             return True
@@ -44,6 +44,8 @@ class GameEngine:
         return False
 
     def get_neighbors(self, q, r):
+        # Axial neighbors (Side 0 is North/Up)
+        # Directions: 0: (0, -1), 1: (+1, -1), 2: (+1, 0), 3: (0, +1), 4: (-1, +1), 5: (-1, 0)
         return [
             (q, r-1, 0, 3), (q+1, r-1, 1, 4), (q+1, r, 2, 5),
             (q, r+1, 3, 0), (q-1, r+1, 4, 1), (q-1, r, 5, 2)
@@ -71,11 +73,12 @@ class GameEngine:
 
     def to_dict(self):
         return {
+            'room_id': self.room_id,
             'board': {f"{q},{r}": v for (q, r), v in self.board.items()},
             'current_player_index': self.current_player_index,
             'players': self.players,
             'current_tile': self.current_tile,
-            'deck_size': len(self.deck)
+            'deck': self.deck
         }
 
     @classmethod
@@ -89,5 +92,5 @@ class GameEngine:
         engine.players = data.get('players', [])
         engine.current_player_index = data.get('current_player_index', 0)
         engine.current_tile = data.get('current_tile')
-        engine.deck_size_saved = data.get('deck_size', 0)
+        engine.deck = data.get('deck', [])
         return engine
