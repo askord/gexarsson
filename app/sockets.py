@@ -32,7 +32,7 @@ def on_join(data):
     join_room(str(room_id))
 
     engine = get_engine(room_id)
-    username = "Guest"
+    username = "Гость"
     if current_user.is_authenticated:
         username = current_user.username
         if engine:
@@ -41,7 +41,7 @@ def on_join(data):
 
     if engine:
         emit('game_update', engine.to_dict(), room=str(room_id))
-    emit('message', {'msg': f'User {username} joined room {room_id}'}, room=str(room_id))
+    emit('message', {'msg': f'Пользователь {username} присоединился к комнате {room_id}'}, room=str(room_id))
 
 @socketio.on('rotate_tile')
 def on_rotate_tile(data):

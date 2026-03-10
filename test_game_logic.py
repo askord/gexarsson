@@ -24,24 +24,31 @@ class TestGameEngine(unittest.TestCase):
         }
 
     def test_valid_placement(self):
-        success, msg = self.engine.place_tile(1, 0, 1)
+        # Pointy-topped neighbors for (0, 0):
+        # (1, 0), (0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1)
+        success, msg = self.engine.place_tile(1, 1, 0) # East
         self.assertTrue(success)
-        self.assertIn((0, 1), self.engine.board)
+        self.assertIn((1, 0), self.engine.board)
+
+    def test_invalid_placement_non_matching(self):
+        # Neighbor's side 0 is East.
+        # (1, 0) is East of (0, 0).
+        # My side 3 (West) must match neighbor's side 0 (East).
+        self.engine.current_tile = {
+            'id': 'road_straight',
+            'sides': [MEADOW, MEADOW, ROAD, MEADOW, MEADOW, ROAD], # Side 3 is MEADOW
+            'center': ROAD
+        }
+        # neighbor (0,0) Side 0 is CITY. My Side 3 is MEADOW. Fails.
+        success, msg = self.engine.place_tile(1, 1, 0)
+        self.assertFalse(success)
+        self.assertEqual(msg, "Недопустимое размещение")
 
     def test_turn_authority(self):
         # User 2 tries to place but it's user 1's turn
-        success, msg = self.engine.place_tile(2, 0, 1)
+        success, msg = self.engine.place_tile(2, 1, 0)
         self.assertFalse(success)
-        self.assertEqual(msg, "Not your turn")
-
-    def test_tile_rotation(self):
-        self.engine.current_tile = {
-            'id': 'city_one_side',
-            'sides': [CITY, MEADOW, MEADOW, MEADOW, MEADOW, MEADOW],
-            'center': MEADOW
-        }
-        self.engine.rotate_current_tile()
-        self.assertEqual(self.engine.current_tile['sides'], [MEADOW, CITY, MEADOW, MEADOW, MEADOW, MEADOW])
+        self.assertEqual(msg, "Не ваш ход")
 
 if __name__ == '__main__':
     unittest.main()

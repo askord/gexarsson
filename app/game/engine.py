@@ -44,11 +44,17 @@ class GameEngine:
         return False
 
     def get_neighbors(self, q, r):
-        # Axial neighbors (Side 0 is North/Up)
-        # Directions: 0: (0, -1), 1: (+1, -1), 2: (+1, 0), 3: (0, +1), 4: (-1, +1), 5: (-1, 0)
+        # Pointy-topped hex axial neighbor offsets
+        # Sides: 0=East (+1, 0), 1=South-East (0, +1), 2=South-West (-1, +1),
+        #        3=West (-1, 0), 4=North-West (0, -1), 5=North-East (+1, -1)
+        # my_side matches neighbor's target_side (target = (my_side + 3) % 6)
         return [
-            (q, r-1, 0, 3), (q+1, r-1, 1, 4), (q+1, r, 2, 5),
-            (q, r+1, 3, 0), (q-1, r+1, 4, 1), (q-1, r, 5, 2)
+            (q+1, r, 0, 3),   # Side 0 (East)
+            (q, r+1, 1, 4),   # Side 1 (South-East)
+            (q-1, r+1, 2, 5), # Side 2 (South-West)
+            (q-1, r, 3, 0),   # Side 3 (West)
+            (q, r-1, 4, 1),   # Side 4 (North-West)
+            (q+1, r-1, 5, 2)  # Side 5 (North-East)
         ]
 
     def is_valid_placement(self, q, r, tile):
@@ -63,13 +69,13 @@ class GameEngine:
 
     def place_tile(self, user_id, q, r):
         if not self.players or self.players[self.current_player_index] != user_id:
-            return False, "Not your turn"
+            return False, "Не ваш ход"
 
         if self.is_valid_placement(q, r, self.current_tile):
             self.board[(q, r)] = self.current_tile
             self.next_turn()
-            return True, "Success"
-        return False, "Invalid placement"
+            return True, "Успех"
+        return False, "Недопустимое размещение"
 
     def to_dict(self):
         return {

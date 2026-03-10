@@ -19,15 +19,15 @@ class TestAuthRoom(unittest.TestCase):
     def test_register_login(self):
         # Register
         response = self.client.post('/register', data=dict(username='test', password='password'), follow_redirects=True)
-        self.assertIn(b'Login', response.data)
+        self.assertIn('Войти'.encode('utf-8'), response.data)
 
         # Login
         response = self.client.post('/login', data=dict(username='test', password='password'), follow_redirects=True)
-        self.assertIn(b'Hello, test!', response.data)
+        self.assertIn('Привет, test!'.encode('utf-8'), response.data)
 
         # Logout
         response = self.client.get('/logout', follow_redirects=True)
-        self.assertIn(b'Welcome', response.data)
+        self.assertIn('Добро пожаловать'.encode('utf-8'), response.data)
 
     def test_create_room(self):
         # Login first
@@ -36,7 +36,7 @@ class TestAuthRoom(unittest.TestCase):
 
         # Create Room
         response = self.client.post('/create_room', data=dict(room_name='myroom'), follow_redirects=True)
-        self.assertIn(b'Room: myroom', response.data)
+        self.assertIn('Комната: myroom'.encode('utf-8'), response.data)
 
         with self.app.app_context():
             room = Room.query.filter_by(name='myroom').first()

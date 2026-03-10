@@ -13,21 +13,19 @@ COLOR_OUTLINE = (0, 0, 0)      # Black
 
 def draw_tile(t_data):
     def draw(t: float):
-        # Hex outline (Pointy-topped, Side 0 is North)
-        # G.polygon(n=6, phase=0) puts vertices at 0, 60, 120...
-        # Flat sides are at 30, 90, 150, 210, 270, 330.
-        # We want Side 0 to be at 270 deg (North).
-        hex_geom = G.polygon(n_sides=6, center=(100, 100, 0), scale=100, phase=0)
+        # Pointy-topped hex (Side 0 is East)
+        # Use phase=30 so vertices are at 30, 90, 150...
+        # Sides are at 0, 60, 120, 180, 240, 300
+        hex_geom = G.polygon(n_sides=6, center=(100, 100, 0), scale=100, phase=30)
         layers = L.layer(hex_geom, color=COLOR_OUTLINE, thickness=0.02)
 
         # Meadow background
-        meadow_bg = G.polygon(n_sides=6, center=(100, 100, 0), scale=95, phase=0)
+        meadow_bg = G.polygon(n_sides=6, center=(100, 100, 0), scale=95, phase=30)
         layers += L.layer(meadow_bg, color=COLOR_MEADOW, thickness=0.01)
 
-        # Side features start at -90 degrees (North)
-        # Side 0: -90, Side 1: -30, Side 2: 30, Side 3: 90, Side 4: 150, Side 5: 210
+        # Features are on sides: 0:East, 1:South-East, 2:South-West, 3:West, 4:North-West, 5:North-East
         def get_side_angle(i):
-            return i * 60 - 90
+            return i * 60
 
         # Roads
         if t_data['center'] == ROAD:
@@ -45,7 +43,7 @@ def draw_tile(t_data):
 
         # Cities
         if t_data['center'] == CITY:
-            city_geom = G.polygon(n_sides=6, center=(100, 100, 0), scale=80, phase=0)
+            city_geom = G.polygon(n_sides=6, center=(100, 100, 0), scale=80, phase=30)
             layers += L.layer(city_geom, color=COLOR_CITY, thickness=0.1)
         else:
             for i, side in enumerate(t_data['sides']):
