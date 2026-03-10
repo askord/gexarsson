@@ -63,3 +63,28 @@ def on_place_tile(data):
             emit('game_update', engine.to_dict(), room=str(room_id))
         else:
             emit('error', {'msg': msg})
+
+@socketio.on('place_meeple')
+def on_place_meeple(data):
+    room_id = int(data['room'])
+    side = int(data['side']) # 0-5 for sides, 6 for center
+    engine = get_engine(room_id)
+    if engine and current_user.is_authenticated:
+        success, msg = engine.place_meeple(current_user.id, side)
+        if success:
+            save_engine(room_id)
+            emit('game_update', engine.to_dict(), room=str(room_id))
+        else:
+            emit('error', {'msg': msg})
+
+@socketio.on('skip_meeple')
+def on_skip_meeple(data):
+    room_id = int(data['room'])
+    engine = get_engine(room_id)
+    if engine and current_user.is_authenticated:
+        success, msg = engine.skip_meeple(current_user.id)
+        if success:
+            save_engine(room_id)
+            emit('game_update', engine.to_dict(), room=str(room_id))
+        else:
+            emit('error', {'msg': msg})

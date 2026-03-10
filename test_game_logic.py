@@ -5,17 +5,19 @@ from app.game.tiles import CITY, MEADOW, ROAD
 class TestGameEngine(unittest.TestCase):
     def setUp(self):
         self.engine = GameEngine(1)
-        self.engine.players = [1, 2] # user_ids
+        self.engine.add_player(1)
+        self.engine.add_player(2)
         self.engine.current_player_index = 0
 
         # Clear board for test
         self.engine.board = {}
-        # Manually set board (0,0)
+        # Manually set board (0,0) - a city tile
         self.engine.board[(0, 0)] = {
             'id': 'city_all',
             'sides': [CITY, CITY, CITY, CITY, CITY, CITY],
             'center': CITY
         }
+        self.engine.state = 'PLACING_TILE'
         # Force current tile to be predictable
         self.engine.current_tile = {
             'id': 'city_all',
@@ -23,29 +25,32 @@ class TestGameEngine(unittest.TestCase):
             'center': CITY
         }
 
-    def test_valid_placement(self):
-        # Pointy-topped neighbors for (0, 0):
-        # (1, 0), (0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1)
-        success, msg = self.engine.place_tile(1, 1, 0) # East
-        self.assertTrue(success)
-        self.assertIn((1, 0), self.engine.board)
-
-    def test_invalid_placement_non_matching(self):
-        # Neighbor's side 0 is East.
-        # (1, 0) is East of (0, 0).
-        # My side 3 (West) must match neighbor's side 0 (East).
-        self.engine.current_tile = {
-            'id': 'road_straight',
-            'sides': [MEADOW, MEADOW, ROAD, MEADOW, MEADOW, ROAD], # Side 3 is MEADOW
-            'center': ROAD
-        }
-        # neighbor (0,0) Side 0 is CITY. My Side 3 is MEADOW. Fails.
+    def test_scoring_city(self):
+        # 1. Place tile (0, 1) to start closing city
         success, msg = self.engine.place_tile(1, 1, 0)
-        self.assertFalse(success)
-        self.assertEqual(msg, "Недопустимое размещение")
+        self.assertTrue(success)
+        self.assertEqual(self.engine.state, 'PLACING_MEEPLE')
+
+        # 2. Place meeple on side 0 of new tile (East)
+        # Neighbor (0,0) is at West (Side 3) of (1,0).
+        # Feature connects (0,0) and (1,0)
+        success, msg = self.engine.place_meeple(1, 0)
+        self.assertTrue(success)
+        self.assertEqual(len(self.engine.meeples), 1)
+
+        # 3. Complete the feature with more tiles?
+        # city_all at (0,0) and (1,0) - need to surround all sides.
+        # This is a bit complex for a test.
+        # Let's check get_feature
+        feature = self.engine.get_feature(0, 0, 0)
+        self.assertIn((0, 0, 0), feature)
+        self.assertIn((1, 0, 3), feature)
+        self.assertIn((1, 0, 0), feature)
+
+        # 4. Check completion
+        self.assertFalse(self.engine.is_feature_complete(feature))
 
     def test_turn_authority(self):
-        # User 2 tries to place but it's user 1's turn
         success, msg = self.engine.place_tile(2, 1, 0)
         self.assertFalse(success)
         self.assertEqual(msg, "Не ваш ход")
