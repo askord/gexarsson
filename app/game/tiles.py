@@ -2,6 +2,7 @@
 MEADOW = 'meadow'
 CITY = 'city'
 ROAD = 'road'
+MONASTERY = 'monastery'
 
 # Tile definition (6 sides)
 # Sides index: 0=top, 1=top-right, 2=bottom-right, 3=bottom, 4=bottom-left, 5=top-left
@@ -24,7 +25,18 @@ TILES = [
         'center': MEADOW,
         'count': 5
     },
-    # Add more as needed
+    {
+        'id': 'monastery',
+        'sides': [MEADOW, MEADOW, MEADOW, MEADOW, MEADOW, MEADOW],
+        'center': MONASTERY,
+        'count': 2
+    },
+    {
+        'id': 'city_road',
+        'sides': [CITY, MEADOW, ROAD, MEADOW, ROAD, MEADOW],
+        'center': MEADOW,
+        'count': 3
+    }
 ]
 
 def get_deck():
