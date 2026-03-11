@@ -18,6 +18,8 @@
         .side-ui { background: #212529; border-radius: 8px; padding: 20px; height: 100%; border: 1px solid #495057; }
         #message-log { font-size: 0.9rem; background: #000; color: #0f0; font-family: monospace; }
         .meeple-btn { margin-bottom: 5px; width: 100%; }
+        .ghost-tile { opacity: 0.4; transition: opacity 0.2s; cursor: pointer; }
+        .ghost-tile:hover { opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -109,35 +111,51 @@
         function renderBoard() {
             var gridDiv = document.getElementById('hex-grid');
             gridDiv.innerHTML = '';
+
+            // Render existing tiles
             for (var key in board) {
-                var pos = key.split(',');
-                var q = parseInt(pos[0]);
-                var r = parseInt(pos[1]);
-                var tile = board[key];
+                renderTile(gridDiv, key, board[key], false);
+            }
 
-                var container = document.createElement('div');
-                container.className = 'tile-container';
-                container.style.position = 'absolute';
+            // Render valid placements (ghost tiles)
+            var isMyTurn = gameState.players[gameState.current_player_index] === currentUserId;
+            if (isMyTurn && gameState.state === 'PLACING_TILE' && gameState.valid_placements) {
+                gameState.valid_placements.forEach(pos => {
+                    renderTile(gridDiv, pos.q + ',' + pos.r, gameState.current_tile, true);
+                });
+            }
+        }
 
-                // Adjusted spacing for tighter tiles (radius 50)
-                // Pointy-topped spacing: width = sqrt(3)*r, height = 3/2*r
-                // We use sqrt(3) approx 1.732.
-                var size = 50;
-                var x = size * (Math.sqrt(3) * q + Math.sqrt(3)/2 * r) + 400;
-                var y = size * (3/2 * r) + 300;
+        function renderTile(gridDiv, key, tile, isGhost) {
+            var pos = key.split(',');
+            var q = parseInt(pos[0]);
+            var r = parseInt(pos[1]);
 
-                container.style.left = (x - size) + 'px';
-                container.style.top = (y - size) + 'px';
-                container.style.width = (size * 2) + 'px';
-                container.style.height = (size * 2) + 'px';
+            var container = document.createElement('div');
+            container.className = isGhost ? 'tile-container ghost-tile' : 'tile-container';
+            container.style.position = 'absolute';
 
-                var tileImg = document.createElement('img');
-                tileImg.src = '/static/tiles/' + tile.id + '.svg';
-                tileImg.style.width = '100%';
-                tileImg.style.height = '100%';
-                if(tile.rotation) tileImg.style.transform = 'rotate(' + (tile.rotation * 60) + 'deg)';
-                container.appendChild(tileImg);
+            var size = 50;
+            var x = size * (Math.sqrt(3) * q + Math.sqrt(3)/2 * r) + 400;
+            var y = size * (3/2 * r) + 300;
 
+            container.style.left = (x - size) + 'px';
+            container.style.top = (y - size) + 'px';
+            container.style.width = (size * 2) + 'px';
+            container.style.height = (size * 2) + 'px';
+
+            var tileImg = document.createElement('img');
+            tileImg.src = '/static/tiles/' + tile.id + '.svg';
+            tileImg.style.width = '100%';
+            tileImg.style.height = '100%';
+            if(tile.rotation) tileImg.style.transform = 'rotate(' + (tile.rotation * 60) + 'deg)';
+            container.appendChild(tileImg);
+
+            if (isGhost) {
+                container.onclick = function() {
+                    socket.emit('place_tile', {room: roomId, q: q, r: r});
+                };
+            } else {
                 // Render meeples
                 gameState.meeples.forEach(m => {
                     if (m.q == q && m.r == r) {
@@ -145,11 +163,10 @@
                         meeple.style.position = 'absolute';
                         meeple.style.width = '24px';
                         meeple.style.height = '24px';
-                        meeple.style.background = '#ffc107'; // Gold
+                        meeple.style.background = '#ffc107';
                         meeple.style.border = '2px solid #000';
                         meeple.style.borderRadius = '50%';
                         meeple.style.zIndex = '10';
-                        meeple.title = 'Игрок ' + m.user_id;
 
                         var angle = (m.side == 6) ? 0 : (m.side * 60);
                         var dist = (m.side == 6) ? 0 : 35;
@@ -160,9 +177,9 @@
                         container.appendChild(meeple);
                     }
                 });
-
-                gridDiv.appendChild(container);
             }
+
+            gridDiv.appendChild(container);
         }
 
         function updateUI() {
@@ -209,19 +226,6 @@
 
         document.getElementById('rotate-btn').onclick = function() {
             socket.emit('rotate_tile', {room: roomId});
-        };
-
-        document.getElementById('game-board').onclick = function(e) {
-            if (gameState.state !== 'PLACING_TILE') return;
-            var rect = this.getBoundingClientRect();
-            var x = e.clientX - rect.left - 400;
-            var y = e.clientY - rect.top - 300;
-            var size = 50;
-            var q = (Math.sqrt(3)/3 * x - 1/3 * y) / size;
-            var r = (2/3 * y) / size;
-            var nq = Math.round(q);
-            var nr = Math.round(r);
-            socket.emit('place_tile', {room: roomId, q: nq, r: nr});
         };
 
         function sendPlaceMeeple(side) {

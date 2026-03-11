@@ -12,8 +12,11 @@ def get_engine(room_id):
     if room_id not in game_engines:
         room = Room.query.get(room_id)
         if room and room.game_state:
-            state = json.loads(room.game_state)
-            game_engines[room_id] = GameEngine.from_dict(state)
+            try:
+                state = json.loads(room.game_state)
+                game_engines[room_id] = GameEngine.from_dict(state)
+            except Exception:
+                game_engines[room_id] = GameEngine(room_id)
         elif room:
             game_engines[room_id] = GameEngine(room_id)
             save_engine(room_id)
@@ -36,7 +39,7 @@ def on_join(data):
     if current_user.is_authenticated:
         username = current_user.username
         if engine:
-            engine.add_player(current_user.id)
+            engine.add_player(str(current_user.id))
             save_engine(room_id)
 
     if engine:
@@ -47,7 +50,7 @@ def on_join(data):
 def on_rotate_tile(data):
     room_id = int(data['room'])
     engine = get_engine(room_id)
-    if engine and engine.players and current_user.is_authenticated and engine.players[engine.current_player_index] == current_user.id:
+    if engine and engine.players and current_user.is_authenticated and engine.players[engine.current_player_index] == str(current_user.id):
         engine.rotate_current_tile()
         emit('game_update', engine.to_dict(), room=str(room_id))
 
@@ -57,7 +60,7 @@ def on_place_tile(data):
     q, r = int(data['q']), int(data['r'])
     engine = get_engine(room_id)
     if engine and current_user.is_authenticated:
-        success, msg = engine.place_tile(current_user.id, q, r)
+        success, msg = engine.place_tile(str(current_user.id), q, r)
         if success:
             save_engine(room_id)
             emit('game_update', engine.to_dict(), room=str(room_id))
@@ -67,11 +70,14 @@ def on_place_tile(data):
 @socketio.on('place_meeple')
 def on_place_meeple(data):
     room_id = int(data['room'])
-    side = int(data['side']) # 0-5 for sides, 6 for center
+    side = int(data['side'])
     engine = get_engine(room_id)
     if engine and current_user.is_authenticated:
-        success, msg = engine.place_meeple(current_user.id, side)
+        success, msg = engine.place_meeple(str(current_user.id), side)
         if success:
+            # Check for score messages
+            for message in engine.get_and_clear_log():
+                emit('message', {'msg': message}, room=str(room_id))
             save_engine(room_id)
             emit('game_update', engine.to_dict(), room=str(room_id))
         else:
@@ -82,8 +88,10 @@ def on_skip_meeple(data):
     room_id = int(data['room'])
     engine = get_engine(room_id)
     if engine and current_user.is_authenticated:
-        success, msg = engine.skip_meeple(current_user.id)
+        success, msg = engine.skip_meeple(str(current_user.id))
         if success:
+            for message in engine.get_and_clear_log():
+                emit('message', {'msg': message}, room=str(room_id))
             save_engine(room_id)
             emit('game_update', engine.to_dict(), room=str(room_id))
         else:
