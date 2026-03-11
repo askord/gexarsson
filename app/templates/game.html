@@ -83,7 +83,7 @@
         var socket = io();
         var roomId = "{{ room.id }}";
         var board = {};
-        var currentUserId = {{ current_user.id }};
+        var currentUserId = "{{ current_user.id }}";
         var gameState = null;
 
         socket.on('connect', function() {
@@ -112,12 +112,10 @@
             var gridDiv = document.getElementById('hex-grid');
             gridDiv.innerHTML = '';
 
-            // Render existing tiles
             for (var key in board) {
                 renderTile(gridDiv, key, board[key], false);
             }
 
-            // Render valid placements (ghost tiles)
             var isMyTurn = gameState.players[gameState.current_player_index] === currentUserId;
             if (isMyTurn && gameState.state === 'PLACING_TILE' && gameState.valid_placements) {
                 gameState.valid_placements.forEach(pos => {
@@ -156,7 +154,6 @@
                     socket.emit('place_tile', {room: roomId, q: q, r: r});
                 };
             } else {
-                // Render meeples
                 gameState.meeples.forEach(m => {
                     if (m.q == q && m.r == r) {
                         var meeple = document.createElement('div');
@@ -210,17 +207,21 @@
             }
 
             if (isMyTurn) {
-                turnInfo.className = "alert alert-warning py-2 text-center fw-bold";
+                turnInfo.className = "alert alert-warning py-2 text-center fw-bold text-dark";
                 turnInfo.innerText = "ВАШ ХОД!";
             } else {
-                turnInfo.className = "alert alert-info py-2 text-center";
-                turnInfo.innerText = "Ход игрока " + (gameState.current_player_index + 1);
+                var currentUserId_turn = gameState.players[gameState.current_player_index];
+                var currentUserName = gameState.player_names[currentUserId_turn] || "Игрок";
+                turnInfo.className = "alert alert-info py-2 text-center text-dark";
+                turnInfo.innerText = "Ход пользователя: " + currentUserName;
             }
 
             var scoresDiv = document.getElementById('player-scores');
             scoresDiv.innerHTML = '';
-            for (var uid in gameState.scores) {
-                scoresDiv.innerHTML += '<div class="d-flex justify-content-between"><span>Игрок ' + uid + '</span><span class="badge bg-secondary">' + gameState.scores[uid] + '</span></div>';
+            for (var i = 0; i < gameState.players.length; i++) {
+                var uid = gameState.players[i];
+                var uname = gameState.player_names[uid] || "Игрок";
+                scoresDiv.innerHTML += '<div class="d-flex justify-content-between"><span>' + uname + '</span><span class="badge bg-secondary">' + gameState.scores[uid] + '</span></div>';
             }
         }
 

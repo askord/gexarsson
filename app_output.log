@@ -10,28 +10,20 @@ Werkzeug appears to be used in a production deployment. Consider switching to a 
 Werkzeug appears to be used in a production deployment. Consider switching to a production web server instead.
  * Debugger is active!
  * Debugger PIN: 410-907-091
-127.0.0.1 - - [11/Mar/2026 19:37:48] "GET /register HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 19:37:49] "[32mPOST /register HTTP/1.1[0m" 302 -
-127.0.0.1 - - [11/Mar/2026 19:37:49] "GET /register HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 19:40:08] "GET /register HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 19:40:09] "[32mPOST /register HTTP/1.1[0m" 302 -
-127.0.0.1 - - [11/Mar/2026 19:40:09] "GET /login HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 19:40:09] "GET /login HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 19:40:09] "[32mPOST /login HTTP/1.1[0m" 302 -
-127.0.0.1 - - [11/Mar/2026 19:40:09] "GET /dashboard HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 19:40:09] "[32mPOST /create_room HTTP/1.1[0m" 302 -
-127.0.0.1 - - [11/Mar/2026 19:40:09] "GET /game/3 HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 19:40:09] "GET /static/style.css HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 19:40:09] "GET /socket.io/?EIO=4&transport=polling&t=PpUQUqh HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 19:40:09] "POST /socket.io/?EIO=4&transport=polling&t=PpUQUqv&sid=P_cNiv3JkYBDHXxpAAAA HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 19:40:09] "GET /socket.io/?EIO=4&transport=polling&t=PpUQUq-&sid=P_cNiv3JkYBDHXxpAAAA HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 19:40:09] "GET /socket.io/?EIO=4&transport=polling&t=PpUQUrC.0&sid=P_cNiv3JkYBDHXxpAAAA HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 19:40:09] "POST /socket.io/?EIO=4&transport=polling&t=PpUQUrC&sid=P_cNiv3JkYBDHXxpAAAA HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 19:40:10] "GET /static/tiles/city_all.svg HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 19:40:10] "GET /static/tiles/city_road.svg HTTP/1.1" 200 -
-127.0.0.1 - - [11/Mar/2026 19:40:12] "GET /socket.io/?EIO=4&transport=websocket&sid=P_cNiv3JkYBDHXxpAAAA HTTP/1.1" 200 -
- * Detected change in '/app/app/game/engine.py', reloading
- * Restarting with stat
-Werkzeug appears to be used in a production deployment. Consider switching to a production web server instead.
- * Debugger is active!
- * Debugger PIN: 410-907-091
+127.0.0.1 - - [11/Mar/2026 19:54:20] "GET /register HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:54:21] "[32mPOST /register HTTP/1.1[0m" 302 -
+127.0.0.1 - - [11/Mar/2026 19:54:21] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:54:21] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:54:21] "[32mPOST /login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [11/Mar/2026 19:54:21] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:54:21] "[32mPOST /create_room HTTP/1.1[0m" 302 -
+127.0.0.1 - - [11/Mar/2026 19:54:21] "GET /game/2 HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:54:21] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:54:21] "GET /socket.io/?EIO=4&transport=polling&t=PpUTkrl HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:54:21] "POST /socket.io/?EIO=4&transport=polling&t=PpUTkry&sid=72A04wMEgtcIoj5oAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:54:21] "GET /socket.io/?EIO=4&transport=polling&t=PpUTks0&sid=72A04wMEgtcIoj5oAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:54:21] "GET /socket.io/?EIO=4&transport=polling&t=PpUTksE&sid=72A04wMEgtcIoj5oAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:54:21] "POST /socket.io/?EIO=4&transport=polling&t=PpUTksD&sid=72A04wMEgtcIoj5oAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:54:22] "GET /static/tiles/city_one_side.svg HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:54:22] "GET /static/tiles/road_straight.svg HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:54:24] "GET /socket.io/?EIO=4&transport=websocket&sid=72A04wMEgtcIoj5oAAAA HTTP/1.1" 200 -

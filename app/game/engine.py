@@ -6,6 +6,7 @@ class GameEngine:
         self.room_id = room_id
         self.board = {} # {(q, r): tile_data}
         self.players = [] # list of user_ids (strings)
+        self.player_names = {} # {user_id: username}
         self.scores = {} # {user_id: score}
         self.current_player_index = 0
         self.deck = get_deck()
@@ -20,10 +21,11 @@ class GameEngine:
 
         self.next_turn()
 
-    def add_player(self, user_id):
+    def add_player(self, user_id, username):
         user_id = str(user_id)
         if user_id not in self.players:
             self.players.append(user_id)
+            self.player_names[user_id] = username
             self.scores[user_id] = 0
             return True
         return False
@@ -212,7 +214,8 @@ class GameEngine:
         if feature_type == MONASTERY: points = 7
         for uid in winners:
             self.scores[uid] = self.scores.get(uid, 0) + points
-            self.log.append(f"Игрок {uid} получил {points} очков!")
+            username = self.player_names.get(uid, f"Игрок {uid}")
+            self.log.append(f"Пользователь {username} получил {points} очков!")
         for m in feature_meeples:
             self.meeples.remove(m)
 
@@ -227,6 +230,7 @@ class GameEngine:
             'board': {f"{q},{r}": v for (q, r), v in self.board.items()},
             'current_player_index': self.current_player_index,
             'players': self.players,
+            'player_names': self.player_names,
             'scores': self.scores,
             'current_tile': self.current_tile,
             'valid_placements': self.get_valid_placements(),
@@ -245,6 +249,7 @@ class GameEngine:
             q, r = map(int, k.split(','))
             engine.board[(q, r)] = v
         engine.players = data.get('players', [])
+        engine.player_names = data.get('player_names', {})
         engine.scores = data.get('scores', {})
         engine.current_player_index = data.get('current_player_index', 0)
         engine.current_tile = data.get('current_tile')

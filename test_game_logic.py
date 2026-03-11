@@ -5,8 +5,8 @@ from app.game.tiles import CITY, MEADOW, ROAD
 class TestGameEngine(unittest.TestCase):
     def setUp(self):
         self.engine = GameEngine(1)
-        self.engine.add_player(1)
-        self.engine.add_player(2)
+        self.engine.add_player("1", "player1")
+        self.engine.add_player("2", "player2")
         self.engine.current_player_index = 0
 
         # Clear board for test
@@ -29,12 +29,12 @@ class TestGameEngine(unittest.TestCase):
 
     def test_scoring_city(self):
         # 1. Place tile (1, 0)
-        success, msg = self.engine.place_tile(1, 1, 0)
+        success, msg = self.engine.place_tile("1", 1, 0)
         self.assertTrue(success)
         self.assertEqual(self.engine.state, 'PLACING_MEEPLE')
 
         # 2. Place meeple
-        success, msg = self.engine.place_meeple(1, 0)
+        success, msg = self.engine.place_meeple("1", 0)
         self.assertTrue(success)
         self.assertEqual(len(self.engine.meeples), 1)
 
@@ -43,7 +43,7 @@ class TestGameEngine(unittest.TestCase):
         self.assertIn((1, 0, 3), feature)
 
     def test_turn_authority(self):
-        success, msg = self.engine.place_tile(2, 1, 0)
+        success, msg = self.engine.place_tile("2", 1, 0)
         self.assertFalse(success)
         self.assertEqual(msg, "Не ваш ход")
 

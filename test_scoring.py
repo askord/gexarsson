@@ -5,7 +5,7 @@ from app.game.tiles import CITY, MEADOW, ROAD
 class TestScoring(unittest.TestCase):
     def setUp(self):
         self.engine = GameEngine(1)
-        self.engine.add_player("1")
+        self.engine.add_player("1", "player1")
         self.engine.board = {}
         # Start with a single-sided city tile at (0,0) facing East (Side 0)
         self.engine.board[(0, 0)] = {

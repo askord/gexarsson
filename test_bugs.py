@@ -5,7 +5,7 @@ from app.game.tiles import CITY, MEADOW, ROAD
 class TestMeepleBugs(unittest.TestCase):
     def setUp(self):
         self.engine = GameEngine(1)
-        self.engine.add_player("1")
+        self.engine.add_player("1", "player1")
         self.engine.board = {}
         self.engine.board[(0, 0)] = {
             'id': 'city_one_side',

@@ -39,7 +39,7 @@ def on_join(data):
     if current_user.is_authenticated:
         username = current_user.username
         if engine:
-            engine.add_player(str(current_user.id))
+            engine.add_player(str(current_user.id), username)
             save_engine(room_id)
 
     if engine:
@@ -75,7 +75,6 @@ def on_place_meeple(data):
     if engine and current_user.is_authenticated:
         success, msg = engine.place_meeple(str(current_user.id), side)
         if success:
-            # Check for score messages
             for message in engine.get_and_clear_log():
                 emit('message', {'msg': message}, room=str(room_id))
             save_engine(room_id)
