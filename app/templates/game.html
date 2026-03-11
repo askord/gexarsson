@@ -20,9 +20,23 @@
         .meeple-btn { margin-bottom: 5px; width: 100%; }
         .ghost-tile { opacity: 0.4; transition: opacity 0.2s; cursor: pointer; }
         .ghost-tile:hover { opacity: 0.8; }
+        .completed-highlight { outline: 4px solid; outline-offset: -4px; z-index: 5; }
+        #color-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
+        }
     </style>
 </head>
 <body>
+    <div id="color-overlay" style="display: none;">
+        <div class="card bg-dark text-white border-secondary p-4 text-center" style="max-width: 500px;">
+            <h3>Выберите цвет игрока</h3>
+            <p id="color-selection-info" class="text-info"></p>
+            <div id="color-options" class="d-flex flex-wrap justify-content-center gap-3 mt-3"></div>
+        </div>
+    </div>
+
     <nav class="navbar navbar-dark bg-black shadow-sm mb-3">
         <div class="container">
             <span class="navbar-brand mb-0 h1">Комната: {{ room.name }}</span>
@@ -70,7 +84,7 @@
                         <div id="player-scores"></div>
                     </div>
 
-                    <div id="turn-info" class="alert alert-info py-2 text-center"></div>
+                    <div id="turn-info" class="alert alert-info py-2 text-center text-dark"></div>
 
                     <div id="message-log" class="p-2 border border-secondary rounded overflow-auto" style="height: 150px;"></div>
                 </div>
@@ -133,6 +147,15 @@
             container.className = isGhost ? 'tile-container ghost-tile' : 'tile-container';
             container.style.position = 'absolute';
 
+            // Highlight if part of last completed feature
+            if (gameState.last_completed_feature) {
+                var found = gameState.last_completed_feature.feature.some(p => p[0] == q && p[1] == r);
+                if (found) {
+                    container.classList.add('completed-highlight');
+                    container.style.outlineColor = gameState.last_completed_feature.color;
+                }
+            }
+
             var size = 50;
             var x = size * (Math.sqrt(3) * q + Math.sqrt(3)/2 * r) + 400;
             var y = size * (3/2 * r) + 300;
@@ -160,8 +183,8 @@
                         meeple.style.position = 'absolute';
                         meeple.style.width = '24px';
                         meeple.style.height = '24px';
-                        meeple.style.background = '#ffc107';
-                        meeple.style.border = '2px solid #000';
+                        meeple.style.background = gameState.player_colors[m.user_id] || '#ffc107';
+                        meeple.style.border = '2px solid #fff';
                         meeple.style.borderRadius = '50%';
                         meeple.style.zIndex = '10';
 
@@ -186,6 +209,36 @@
             var rotateBtn = document.getElementById('rotate-btn');
             var meepleSelection = document.getElementById('meeple-selection');
             var nextTileImg = document.getElementById('next-tile-img');
+            var overlay = document.getElementById('color-overlay');
+
+            if (gameState.state === 'SELECTING_COLORS') {
+                overlay.style.display = 'flex';
+                var info = document.getElementById('color-selection-info');
+                var currentSelectorId = gameState.players[gameState.current_player_index];
+                info.innerText = (currentSelectorId === currentUserId) ? "Ваша очередь выбирать цвет!" : "Ожидание выбора цвета: " + gameState.player_names[currentSelectorId];
+
+                var options = document.getElementById('color-options');
+                options.innerHTML = '';
+                gameState.available_colors.forEach(c => {
+                    var btn = document.createElement('button');
+                    btn.className = 'btn';
+                    btn.style.background = c.hex;
+                    btn.style.width = '60px'; btn.style.height = '60px';
+                    btn.style.border = '3px solid #fff';
+                    btn.title = c.name;
+
+                    var isTaken = Object.values(gameState.player_colors).includes(c.hex);
+                    if (isTaken) {
+                        btn.style.opacity = '0.3';
+                        btn.disabled = true;
+                    } else {
+                        btn.onclick = function() { socket.emit('select_color', {room: roomId, color: c.hex}); };
+                    }
+                    options.appendChild(btn);
+                });
+            } else {
+                overlay.style.display = 'none';
+            }
 
             if (gameState.state === 'PLACING_TILE') {
                 stateText.innerText = "Размещение плитки";
@@ -199,11 +252,13 @@
                 } else {
                     nextTileImg.style.display = 'none';
                 }
-            } else {
+            } else if (gameState.state === 'PLACING_MEEPLE') {
                 stateText.innerText = "Размещение мипла";
                 nextTileImg.style.display = 'none';
                 rotateBtn.disabled = true;
                 meepleSelection.style.display = isMyTurn ? 'block' : 'none';
+            } else if (gameState.state === 'GAME_OVER') {
+                stateText.innerText = "ИГРА ОКОНЧЕНА";
             }
 
             if (isMyTurn) {
@@ -221,7 +276,10 @@
             for (var i = 0; i < gameState.players.length; i++) {
                 var uid = gameState.players[i];
                 var uname = gameState.player_names[uid] || "Игрок";
-                scoresDiv.innerHTML += '<div class="d-flex justify-content-between"><span>' + uname + '</span><span class="badge bg-secondary">' + gameState.scores[uid] + '</span></div>';
+                var color = gameState.player_colors[uid] || '#999';
+                scoresDiv.innerHTML += '<div class="d-flex justify-content-between align-items-center mb-1">' +
+                    '<span style="color:' + color + '; font-weight:bold;">' + uname + '</span>' +
+                    '<span class="badge bg-secondary">' + gameState.scores[uid] + '</span></div>';
             }
         }
 

@@ -29,6 +29,10 @@ def save_engine(room_id):
         room.game_state = json.dumps(engine.to_dict())
         db.session.commit()
 
+def emit_logs(engine, room_id):
+    for message in engine.get_and_clear_log():
+        emit('message', {'msg': message}, room=str(room_id))
+
 @socketio.on('join')
 def on_join(data):
     room_id = int(data['room'])
@@ -46,6 +50,20 @@ def on_join(data):
         emit('game_update', engine.to_dict(), room=str(room_id))
     emit('message', {'msg': f'Пользователь {username} присоединился к комнате {room_id}'}, room=str(room_id))
 
+@socketio.on('select_color')
+def on_select_color(data):
+    room_id = int(data['room'])
+    color_hex = data['color']
+    engine = get_engine(room_id)
+    if engine and current_user.is_authenticated:
+        success, msg = engine.select_color(str(current_user.id), color_hex)
+        if success:
+            save_engine(room_id)
+            emit('game_update', engine.to_dict(), room=str(room_id))
+            emit_logs(engine, room_id)
+        else:
+            emit('error', {'msg': msg})
+
 @socketio.on('rotate_tile')
 def on_rotate_tile(data):
     room_id = int(data['room'])
@@ -62,6 +80,7 @@ def on_place_tile(data):
     if engine and current_user.is_authenticated:
         success, msg = engine.place_tile(str(current_user.id), q, r)
         if success:
+            emit_logs(engine, room_id)
             save_engine(room_id)
             emit('game_update', engine.to_dict(), room=str(room_id))
         else:
@@ -75,8 +94,7 @@ def on_place_meeple(data):
     if engine and current_user.is_authenticated:
         success, msg = engine.place_meeple(str(current_user.id), side)
         if success:
-            for message in engine.get_and_clear_log():
-                emit('message', {'msg': message}, room=str(room_id))
+            emit_logs(engine, room_id)
             save_engine(room_id)
             emit('game_update', engine.to_dict(), room=str(room_id))
         else:
@@ -89,8 +107,7 @@ def on_skip_meeple(data):
     if engine and current_user.is_authenticated:
         success, msg = engine.skip_meeple(str(current_user.id))
         if success:
-            for message in engine.get_and_clear_log():
-                emit('message', {'msg': message}, room=str(room_id))
+            emit_logs(engine, room_id)
             save_engine(room_id)
             emit('game_update', engine.to_dict(), room=str(room_id))
         else:

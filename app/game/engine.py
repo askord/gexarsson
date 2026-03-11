@@ -2,24 +2,39 @@ import random
 from .tiles import get_deck, CITY, ROAD, MONASTERY, MEADOW
 
 class GameEngine:
+    COLORS = [
+        {'name': 'Красный', 'hex': '#dc3545'},
+        {'name': 'Синий', 'hex': '#0d6efd'},
+        {'name': 'Зеленый', 'hex': '#198754'},
+        {'name': 'Желтый', 'hex': '#ffc107'},
+        {'name': 'Черный', 'hex': '#212529'},
+        {'name': 'Белый', 'hex': '#f8f9fa'}
+    ]
+
     def __init__(self, room_id):
         self.room_id = room_id
         self.board = {} # {(q, r): tile_data}
         self.players = [] # list of user_ids (strings)
         self.player_names = {} # {user_id: username}
+        self.player_colors = {} # {user_id: color_hex}
         self.scores = {} # {user_id: score}
         self.current_player_index = 0
         self.deck = get_deck()
         self.meeples = [] # list of {'q': q, 'r': r, 'side': side, 'user_id': user_id, 'type': type}
         self.current_tile = None
         self.last_placed_pos = None # (q, r)
-        self.state = 'PLACING_TILE'
+        self.state = 'SELECTING_COLORS' # SELECTING_COLORS, PLACING_TILE, PLACING_MEEPLE
         self.log = []
+        self.last_completed_feature = None # {'feature': set, 'color': hex}
 
+        # Initial tile at (0, 0)
         if self.deck:
-            self.board[(0, 0)] = self.deck.pop(0)
+            # For the initial tile, we just take the first one from deck
+            # but we need to ensure it has connections meta
+            start_tile = self.deck.pop(0)
+            self.board[(0, 0)] = start_tile
 
-        self.next_turn()
+        self.current_tile = None
 
     def add_player(self, user_id, username):
         user_id = str(user_id)
@@ -30,15 +45,64 @@ class GameEngine:
             return True
         return False
 
-    def next_turn(self):
-        if self.deck:
-            self.current_tile = self.deck.pop(0)
-            if self.players:
-                self.current_player_index = (self.current_player_index + 1) % len(self.players)
+    def select_color(self, user_id, color_hex):
+        user_id = str(user_id)
+        if self.state != 'SELECTING_COLORS':
+            return False, "Выбор цветов завершен"
+        if self.players[self.current_player_index] != user_id:
+            return False, "Не ваша очередь выбирать цвет"
+        if color_hex in self.player_colors.values():
+            return False, "Этот цвет уже занята"
+
+        self.player_colors[user_id] = color_hex
+        self.current_player_index += 1
+
+        if self.current_player_index >= len(self.players):
+            self.current_player_index = 0
             self.state = 'PLACING_TILE'
-            self.last_placed_pos = None
-            return True
+            self.next_turn()
+        return True, "Успех"
+
+    def next_turn(self):
+        self.last_completed_feature = None
+        while self.deck:
+            tile = self.deck.pop(0)
+            if self.can_tile_be_placed(tile):
+                self.current_tile = tile
+                self.state = 'PLACING_TILE'
+                return True
+            else:
+                self.log.append(f"Плитка {tile['id']} сброшена (некуда поставить)")
+
         self.current_tile = None
+        self.state = 'GAME_OVER'
+        return False
+
+    def can_tile_be_placed(self, tile):
+        candidates = set()
+        for (q, r) in self.board:
+            for nq, nr, _, _ in self.get_neighbors(q, r):
+                if (nq, nr) not in self.board:
+                    candidates.add((nq, nr))
+
+        temp_tile = tile.copy()
+        temp_tile['sides'] = tile['sides'][:]
+        temp_tile['connections'] = [g[:] for g in tile['connections']]
+
+        for _ in range(6):
+            for q, r in candidates:
+                if self.is_valid_placement(q, r, temp_tile):
+                    return True
+
+            sides = temp_tile['sides']
+            temp_tile['sides'] = [sides[5]] + sides[0:5]
+            new_conns = []
+            for group in temp_tile['connections']:
+                new_group = []
+                for idx in group:
+                    new_group.append((idx + 1) % 6 if idx < 6 else 6)
+                new_conns.append(new_group)
+            temp_tile['connections'] = new_conns
         return False
 
     def rotate_current_tile(self):
@@ -51,10 +115,7 @@ class GameEngine:
             for group in self.current_tile['connections']:
                 new_group = []
                 for idx in group:
-                    if idx < 6:
-                        new_group.append((idx + 1) % 6)
-                    else:
-                        new_group.append(6)
+                    new_group.append((idx + 1) % 6 if idx < 6 else 6)
                 new_conns.append(new_group)
             self.current_tile['connections'] = new_conns
 
@@ -103,6 +164,8 @@ class GameEngine:
             self.board[(q, r)] = self.current_tile
             self.last_placed_pos = (q, r)
             self.state = 'PLACING_MEEPLE'
+            uname = self.player_names.get(user_id, user_id)
+            self.log.append(f"Пользователь {uname} разместил плитку {self.current_tile['id']} на ({q}, {r})")
             return True, "Успех"
         return False, "Недопустимое размещение"
 
@@ -112,7 +175,8 @@ class GameEngine:
             return False, "Сейчас нельзя пропустить мипла"
         if self.players[self.current_player_index] != user_id:
             return False, "Не ваш ход"
-        self.score_completed_features()
+        self.score_completed_features(user_id)
+        self.current_player_index = (self.current_player_index + 1) % len(self.players)
         self.next_turn()
         return True, "Успех"
 
@@ -139,7 +203,8 @@ class GameEngine:
             'user_id': user_id,
             'type': feature_type
         })
-        self.score_completed_features()
+        self.score_completed_features(user_id)
+        self.current_player_index = (self.current_player_index + 1) % len(self.players)
         self.next_turn()
         return True, "Успех"
 
@@ -184,7 +249,7 @@ class GameEngine:
                 return False
         return True
 
-    def score_completed_features(self):
+    def score_completed_features(self, user_id):
         if not self.last_placed_pos: return
         q, r = self.last_placed_pos
         tile = self.board[(q, r)]
@@ -197,9 +262,9 @@ class GameEngine:
             if feature_tuple in processed_features: continue
             processed_features.append(feature_tuple)
             if self.is_feature_complete(feature):
-                self.award_points(feature, feature_type)
+                self.award_points(feature, feature_type, user_id)
 
-    def award_points(self, feature, feature_type):
+    def award_points(self, feature, feature_type, finisher_id):
         meeple_counts = {}
         feature_meeples = []
         for m in self.meeples:
@@ -215,7 +280,11 @@ class GameEngine:
         for uid in winners:
             self.scores[uid] = self.scores.get(uid, 0) + points
             username = self.player_names.get(uid, f"Игрок {uid}")
-            self.log.append(f"Пользователь {username} получил {points} очков!")
+            self.log.append(f"Пользователь {username} получил {points} очков за завершенный объект!")
+        self.last_completed_feature = {
+            'feature': list(unique_tiles),
+            'color': self.player_colors.get(finisher_id, '#ffffff')
+        }
         for m in feature_meeples:
             self.meeples.remove(m)
 
@@ -231,13 +300,16 @@ class GameEngine:
             'current_player_index': self.current_player_index,
             'players': self.players,
             'player_names': self.player_names,
+            'player_colors': self.player_colors,
+            'available_colors': self.COLORS,
             'scores': self.scores,
             'current_tile': self.current_tile,
             'valid_placements': self.get_valid_placements(),
-            'deck': self.deck,
+            'deck_size': len(self.deck),
             'meeples': self.meeples,
             'state': self.state,
-            'last_placed_pos': self.last_placed_pos
+            'last_placed_pos': self.last_placed_pos,
+            'last_completed_feature': self.last_completed_feature
         }
 
     @classmethod
@@ -250,11 +322,13 @@ class GameEngine:
             engine.board[(q, r)] = v
         engine.players = data.get('players', [])
         engine.player_names = data.get('player_names', {})
+        engine.player_colors = data.get('player_colors', {})
         engine.scores = data.get('scores', {})
         engine.current_player_index = data.get('current_player_index', 0)
         engine.current_tile = data.get('current_tile')
         engine.deck = data.get('deck', [])
         engine.meeples = data.get('meeples', [])
-        engine.state = data.get('state', 'PLACING_TILE')
+        engine.state = data.get('state', 'SELECTING_COLORS')
         engine.last_placed_pos = data.get('last_placed_pos')
+        engine.last_completed_feature = data.get('last_completed_feature')
         return engine
