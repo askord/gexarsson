@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Личный кабинет - Carcassonne Hex</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .room-list-item { transition: 0.2s; }
+        .room-list-item:hover { background-color: #f1f3f5; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">Carcassonne Hex</a>
+            <div class="ms-auto text-light">
+                {{ current_user.username }} | <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-danger ms-2">Выйти</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h4 class="card-title">Создать комнату</h4>
+                        <form action="{{ url_for('create_room') }}" method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">Название комнаты</label>
+                                <input name="room_name" class="form-control" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Создать</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h4 class="card-title mb-3">Доступные комнаты</h4>
+                        <div class="list-group list-group-flush">
+                            {% for room in rooms %}
+                                <a href="{{ url_for('game', room_id=room.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center room-list-item">
+                                    {{ room.name }}
+                                    <span class="badge bg-primary rounded-pill">Вход</span>
+                                </a>
+                            {% else %}
+                                <div class="text-center py-4 text-muted">Пока нет созданных комнат.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
