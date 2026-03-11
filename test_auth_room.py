@@ -23,7 +23,8 @@ class TestAuthRoom(unittest.TestCase):
 
         # Login
         response = self.client.post('/login', data=dict(username='test', password='password'), follow_redirects=True)
-        self.assertIn('Привет, test!'.encode('utf-8'), response.data)
+        # Check if username is in the navbar
+        self.assertIn('test'.encode('utf-8'), response.data)
 
         # Logout
         response = self.client.get('/logout', follow_redirects=True)

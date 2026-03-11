@@ -13,17 +13,17 @@ COLOR_OUTLINE = (0, 0, 0)      # Black
 
 def draw_tile(t_data):
     def draw(t: float):
+        # Center is (50, 50) for a 100x100 canvas
+        cx, cy = 50, 50
+
         # Pointy-topped hex (Side 0 is East)
-        # Use phase=30 so vertices are at 30, 90, 150...
-        # Sides are at 0, 60, 120, 180, 240, 300
-        hex_geom = G.polygon(n_sides=6, center=(100, 100, 0), scale=100, phase=30)
+        hex_geom = G.polygon(n_sides=6, center=(cx, cy, 0), scale=100, phase=30)
         layers = L.layer(hex_geom, color=COLOR_OUTLINE, thickness=0.02)
 
         # Meadow background
-        meadow_bg = G.polygon(n_sides=6, center=(100, 100, 0), scale=95, phase=30)
+        meadow_bg = G.polygon(n_sides=6, center=(cx, cy, 0), scale=95, phase=30)
         layers += L.layer(meadow_bg, color=COLOR_MEADOW, thickness=0.01)
 
-        # Features are on sides: 0:East, 1:South-East, 2:South-West, 3:West, 4:North-West, 5:North-East
         def get_side_angle(i):
             return i * 60
 
@@ -32,31 +32,31 @@ def draw_tile(t_data):
             for i, side in enumerate(t_data['sides']):
                 if side == ROAD:
                     angle_deg = get_side_angle(i)
-                    road_seg = G.line(center=(100, 100, 0), anchor='left', length=50, angle=angle_deg)
+                    road_seg = G.line(center=(cx, cy, 0), anchor='left', length=50, angle=angle_deg)
                     layers += L.layer(road_seg, color=COLOR_ROAD, thickness=0.05)
         elif ROAD in t_data['sides']:
             road_sides = [i for i, s in enumerate(t_data['sides']) if s == ROAD]
             for i in road_sides:
                 angle_deg = get_side_angle(i)
-                road_seg = G.line(center=(100, 100, 0), anchor='left', length=50, angle=angle_deg)
+                road_seg = G.line(center=(cx, cy, 0), anchor='left', length=50, angle=angle_deg)
                 layers += L.layer(road_seg, color=COLOR_ROAD, thickness=0.05)
 
         # Cities
         if t_data['center'] == CITY:
-            city_geom = G.polygon(n_sides=6, center=(100, 100, 0), scale=80, phase=30)
+            city_geom = G.polygon(n_sides=6, center=(cx, cy, 0), scale=80, phase=30)
             layers += L.layer(city_geom, color=COLOR_CITY, thickness=0.1)
         else:
             for i, side in enumerate(t_data['sides']):
                 if side == CITY:
                     angle_rad = math.radians(get_side_angle(i))
-                    cx = 100 + 40 * math.cos(angle_rad)
-                    cy = 100 + 40 * math.sin(angle_rad)
-                    city_part = G.polygon(n_sides=3, center=(cx, cy, 0), scale=30, phase=get_side_angle(i))
+                    px = cx + 40 * math.cos(angle_rad)
+                    py = cy + 40 * math.sin(angle_rad)
+                    city_part = G.polygon(n_sides=3, center=(px, py, 0), scale=30, phase=get_side_angle(i))
                     layers += L.layer(city_part, color=COLOR_CITY, thickness=0.05)
 
         # Monastery
         if t_data['center'] == MONASTERY:
-            monastery_geom = G.polygon(n_sides=4, center=(100, 100, 0), scale=30, phase=45)
+            monastery_geom = G.polygon(n_sides=4, center=(cx, cy, 0), scale=30, phase=45)
             layers += L.layer(monastery_geom, color=COLOR_MONASTERY, thickness=0.1)
 
         return layers
@@ -67,7 +67,7 @@ def render_all():
     for t_data in TILES:
         draw_func = draw_tile(t_data)
         path = f"app/static/tiles/{t_data['id']}.svg"
-        Export(draw_func, t=0.0, fmt="svg", path=path, canvas_size=(200, 200))
+        Export(draw_func, t=0.0, fmt="svg", path=path, canvas_size=(100, 100))
         print(f"Rendered {path}")
 
 if __name__ == "__main__":

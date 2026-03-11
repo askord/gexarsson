@@ -10,18 +10,19 @@ Werkzeug appears to be used in a production deployment. Consider switching to a 
 Werkzeug appears to be used in a production deployment. Consider switching to a production web server instead.
  * Debugger is active!
  * Debugger PIN: 410-907-091
-127.0.0.1 - - [10/Mar/2026 20:27:58] "GET /register HTTP/1.1" 200 -
-127.0.0.1 - - [10/Mar/2026 20:27:59] "[32mPOST /register HTTP/1.1[0m" 302 -
-127.0.0.1 - - [10/Mar/2026 20:27:59] "GET /login HTTP/1.1" 200 -
-127.0.0.1 - - [10/Mar/2026 20:27:59] "[32mPOST /login HTTP/1.1[0m" 302 -
-127.0.0.1 - - [10/Mar/2026 20:27:59] "GET /dashboard HTTP/1.1" 200 -
-127.0.0.1 - - [10/Mar/2026 20:27:59] "[32mPOST /create_room HTTP/1.1[0m" 302 -
-127.0.0.1 - - [10/Mar/2026 20:27:59] "GET /game/2 HTTP/1.1" 200 -
-127.0.0.1 - - [10/Mar/2026 20:27:59] "GET /static/style.css HTTP/1.1" 200 -
-127.0.0.1 - - [10/Mar/2026 20:28:00] "GET /socket.io/?EIO=4&transport=polling&t=PpPRrph HTTP/1.1" 200 -
-127.0.0.1 - - [10/Mar/2026 20:28:00] "POST /socket.io/?EIO=4&transport=polling&t=PpPRrpy&sid=VTwF3UToCx7B2h5dAAAA HTTP/1.1" 200 -
-127.0.0.1 - - [10/Mar/2026 20:28:00] "GET /socket.io/?EIO=4&transport=polling&t=PpPRrq3&sid=VTwF3UToCx7B2h5dAAAA HTTP/1.1" 200 -
-127.0.0.1 - - [10/Mar/2026 20:28:00] "GET /socket.io/?EIO=4&transport=polling&t=PpPRrqL&sid=VTwF3UToCx7B2h5dAAAA HTTP/1.1" 200 -
-127.0.0.1 - - [10/Mar/2026 20:28:00] "POST /socket.io/?EIO=4&transport=polling&t=PpPRrqK&sid=VTwF3UToCx7B2h5dAAAA HTTP/1.1" 200 -
-127.0.0.1 - - [10/Mar/2026 20:28:00] "GET /static/tiles/city_one_side.svg HTTP/1.1" 200 -
-127.0.0.1 - - [10/Mar/2026 20:28:03] "GET /socket.io/?EIO=4&transport=websocket&sid=VTwF3UToCx7B2h5dAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:16:12] "GET /register HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:16:13] "[32mPOST /register HTTP/1.1[0m" 302 -
+127.0.0.1 - - [11/Mar/2026 19:16:13] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:16:13] "[32mPOST /login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [11/Mar/2026 19:16:13] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:16:14] "[32mPOST /create_room HTTP/1.1[0m" 302 -
+127.0.0.1 - - [11/Mar/2026 19:16:14] "GET /game/2 HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:16:14] "GET /static/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:16:14] "GET /socket.io/?EIO=4&transport=polling&t=PpUL0JX HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:16:14] "POST /socket.io/?EIO=4&transport=polling&t=PpUL0Jp&sid=LZKY0J1DtoPsficuAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:16:14] "GET /socket.io/?EIO=4&transport=polling&t=PpUL0Jy&sid=LZKY0J1DtoPsficuAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:16:14] "GET /socket.io/?EIO=4&transport=polling&t=PpUL0KF&sid=LZKY0J1DtoPsficuAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:16:14] "POST /socket.io/?EIO=4&transport=polling&t=PpUL0KE&sid=LZKY0J1DtoPsficuAAAA HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:16:14] "GET /static/tiles/monastery.svg HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:16:14] "GET /static/tiles/city_road.svg HTTP/1.1" 200 -
+127.0.0.1 - - [11/Mar/2026 19:16:17] "GET /socket.io/?EIO=4&transport=websocket&sid=LZKY0J1DtoPsficuAAAA HTTP/1.1" 200 -
