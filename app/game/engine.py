@@ -75,8 +75,33 @@ class GameEngine:
                 self.log.append(f"Плитка {tile['id']} сброшена (некуда поставить)")
 
         self.current_tile = None
-        self.state = 'GAME_OVER'
+        if self.state != 'GAME_OVER':
+            self.score_unfinished_features_at_end()
+            self.state = 'GAME_OVER'
         return False
+
+    def score_unfinished_features_at_end(self):
+        self.log.append("Игра окончена. Подсчет очков за незавершенные объекты...")
+        processed_features = set()
+
+        # We need to copy meeples because award_points removes them
+        meeples_to_process = self.meeples[:]
+
+        for m in meeples_to_process:
+            q, r, side = m['q'], m['r'], m['side']
+            feature = self.get_feature(q, r, side)
+            feature_tuple = tuple(sorted(list(feature)))
+
+            if feature_tuple in processed_features:
+                continue
+            processed_features.add(feature_tuple)
+
+            tile = self.board.get((q, r))
+            if not tile: continue
+            feature_type = tile['sides'][side] if side < 6 else tile['center']
+
+            # Award points for unfinished feature
+            self.award_points(feature, feature_type, m['user_id'], is_final=True)
 
     def can_tile_be_placed(self, tile):
         candidates = set()
@@ -242,6 +267,7 @@ class GameEngine:
                         if (nq, nr) in self.board:
                             neighbors_count += 1
                     if neighbors_count < 6: return False
+                    else: return True # Monastery is complete if 6 neighbors
                 continue
             neighbors = self.get_neighbors(q, r)
             nq, nr, _, _ = neighbors[s]
@@ -254,17 +280,32 @@ class GameEngine:
         q, r = self.last_placed_pos
         tile = self.board[(q, r)]
         processed_features = []
+
+        # Check all features in the room (not just on the tile) to find completed monasteries
+        features_to_check = []
         for side in range(7):
-            feature_type = tile['sides'][side] if side < 6 else tile['center']
+            features_to_check.append((q, r, side))
+
+        # Also check neighbors for monasteries that might have been completed
+        for nq, nr, _, _ in self.get_neighbors(q, r):
+            if (nq, nr) in self.board:
+                features_to_check.append((nq, nr, 6))
+
+        for cq, cr, cs in features_to_check:
+            curr_tile = self.board.get((cq, cr))
+            if not curr_tile: continue
+            feature_type = curr_tile['sides'][cs] if cs < 6 else curr_tile['center']
             if feature_type not in [CITY, ROAD, MONASTERY]: continue
-            feature = self.get_feature(q, r, side)
+
+            feature = self.get_feature(cq, cr, cs)
             feature_tuple = tuple(sorted(list(feature)))
             if feature_tuple in processed_features: continue
             processed_features.append(feature_tuple)
+
             if self.is_feature_complete(feature):
                 self.award_points(feature, feature_type, user_id)
 
-    def award_points(self, feature, feature_type, finisher_id):
+    def award_points(self, feature, feature_type, finisher_id, is_final=False):
         meeple_counts = {}
         feature_meeples = []
         for m in self.meeples:
@@ -275,18 +316,38 @@ class GameEngine:
         max_meeples = max(meeple_counts.values())
         winners = [uid for uid, count in meeple_counts.items() if count == max_meeples]
         unique_tiles = set((q, r) for q, r, s in feature)
-        points = len(unique_tiles) * (2 if feature_type == CITY else 1)
-        if feature_type == MONASTERY: points = 7
+
+        if is_final:
+            if feature_type == MONASTERY:
+                # 1 point for monastery tile + 1 per neighbor
+                q_m, r_m, _ = list(feature)[0] # Monastery feature has only 1 tile-side group
+                neighbors_count = 0
+                for nq, nr, _, _ in self.get_neighbors(q_m, r_m):
+                    if (nq, nr) in self.board:
+                        neighbors_count += 1
+                points = 1 + neighbors_count
+            else:
+                # 1 point per tile for roads and cities
+                points = len(unique_tiles)
+        else:
+            points = len(unique_tiles) * (2 if feature_type == CITY else 1)
+            if feature_type == MONASTERY: points = 7
+
         for uid in winners:
             self.scores[uid] = self.scores.get(uid, 0) + points
             username = self.player_names.get(uid, f"Игрок {uid}")
-            self.log.append(f"Пользователь {username} получил {points} очков за завершенный объект!")
-        self.last_completed_feature = {
-            'feature': list(unique_tiles),
-            'color': self.player_colors.get(finisher_id, '#ffffff')
-        }
+            status = "незавершенный" if is_final else "завершенный"
+            self.log.append(f"Пользователь {username} получил {points} очков за {status} объект!")
+
+        if not is_final:
+            self.last_completed_feature = {
+                'feature': list(unique_tiles),
+                'color': self.player_colors.get(finisher_id, '#ffffff')
+            }
+
         for m in feature_meeples:
-            self.meeples.remove(m)
+            if m in self.meeples:
+                self.meeples.remove(m)
 
     def get_and_clear_log(self):
         log = self.log

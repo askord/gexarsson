@@ -6,6 +6,7 @@ from .game.engine import GameEngine
 import json
 
 game_engines = {}
+active_users = {} # {sid: room_id}
 
 def get_engine(room_id):
     room_id = int(room_id)
@@ -35,8 +36,10 @@ def emit_logs(engine, room_id):
 
 @socketio.on('join')
 def on_join(data):
+    from flask import request
     room_id = int(data['room'])
     join_room(str(room_id))
+    active_users[request.sid] = room_id
 
     engine = get_engine(room_id)
     username = "Гость"
@@ -49,6 +52,27 @@ def on_join(data):
     if engine:
         emit('game_update', engine.to_dict(), room=str(room_id))
     emit('message', {'msg': f'Пользователь {username} присоединился к комнате {room_id}'}, room=str(room_id))
+
+@socketio.on('disconnect')
+def on_disconnect():
+    from flask import request
+    sid = request.sid
+    if sid in active_users:
+        room_id = active_users.pop(sid)
+        # Check if any users left in this room
+        room_still_active = False
+        for r_id in active_users.values():
+            if r_id == room_id:
+                room_still_active = True
+                break
+
+        if not room_still_active:
+            room = Room.query.get(room_id)
+            if room:
+                room.is_active = False
+                db.session.commit()
+                if room_id in game_engines:
+                    del game_engines[room_id]
 
 @socketio.on('select_color')
 def on_select_color(data):
