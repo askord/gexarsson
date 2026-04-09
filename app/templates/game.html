@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Игра: {{ room.name }} - Carcassonne Hex</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { background-color: #343a40; color: white; }
+        #game-board {
+            background: #2b3035;
+            border: 2px solid #495057;
+            border-radius: 8px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        .tile-container { transition: filter 0.2s; }
+        .tile-container:hover { filter: brightness(1.2); cursor: pointer; }
+        .side-ui { background: #212529; border-radius: 8px; padding: 20px; height: 100%; border: 1px solid #495057; }
+        #message-log { font-size: 0.9rem; background: #000; color: #0f0; font-family: monospace; }
+        .meeple-btn { margin-bottom: 5px; width: 100%; }
+        .ghost-tile { opacity: 0.4; transition: opacity 0.2s; cursor: pointer; }
+        .ghost-tile:hover { opacity: 0.8; }
+        .completed-highlight { outline: 4px solid; outline-offset: -4px; z-index: 5; }
+        #color-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="color-overlay" style="display: none;">
+        <div class="card bg-dark text-white border-secondary p-4 text-center" style="max-width: 500px;">
+            <h3>Выберите цвет игрока</h3>
+            <p id="color-selection-info" class="text-info"></p>
+            <div id="color-options" class="d-flex flex-wrap justify-content-center gap-3 mt-3"></div>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-dark bg-black shadow-sm mb-3">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">Комната: {{ room.name }}</span>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light btn-sm">В лобби</a>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4">
+        <div class="row">
+            <div class="col-lg-9 mb-3">
+                <div id="game-board" style="position: relative; width: 100%; height: 700px; overflow: hidden;">
+                    <div id="hex-grid" style="position: absolute; width: 100%; height: 100%;"></div>
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <div class="side-ui shadow">
+                    <div id="status-panel" class="mb-4">
+                        <h5 id="current-state-text" class="text-warning mb-3">Загрузка...</h5>
+                        <div class="d-flex align-items-center justify-content-center mb-3">
+                            <div id="next-tile-view" style="width: 120px; height: 120px; border: 2px solid #495057; background: #fff; border-radius: 8px;">
+                                <img id="next-tile-img" style="width: 100%; height: 100%;" src="">
+                            </div>
+                        </div>
+                        <button id="rotate-btn" class="btn btn-primary w-100 mb-3">Повернуть ↻</button>
+
+                        <div id="meeple-selection" style="display:none;" class="card bg-dark border-secondary">
+                            <div class="card-body">
+                                <h6 class="card-title text-info text-center">Разместить мипла?</h6>
+                                <div class="row g-1">
+                                    <div class="col-12"><button class="btn btn-sm btn-outline-info meeple-btn" onclick="sendPlaceMeeple(6)">Центр</button></div>
+                                    <div class="col-6"><button class="btn btn-xs btn-outline-secondary meeple-btn" onclick="sendPlaceMeeple(5)">С-В</button></div>
+                                    <div class="col-6"><button class="btn btn-xs btn-outline-secondary meeple-btn" onclick="sendPlaceMeeple(0)">Восток</button></div>
+                                    <div class="col-6"><button class="btn btn-xs btn-outline-secondary meeple-btn" onclick="sendPlaceMeeple(1)">Ю-В</button></div>
+                                    <div class="col-6"><button class="btn btn-xs btn-outline-secondary meeple-btn" onclick="sendPlaceMeeple(2)">Ю-З</button></div>
+                                    <div class="col-6"><button class="btn btn-xs btn-outline-secondary meeple-btn" onclick="sendPlaceMeeple(3)">Запад</button></div>
+                                    <div class="col-6"><button class="btn btn-xs btn-outline-secondary meeple-btn" onclick="sendPlaceMeeple(4)">С-З</button></div>
+                                </div>
+                                <button class="btn btn-sm btn-secondary w-100 mt-2" onclick="sendSkipMeeple()">Пропустить</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="scores-panel" class="mb-4">
+                        <h6 class="border-bottom border-secondary pb-2">Таблица лидеров</h6>
+                        <div id="player-scores"></div>
+                    </div>
+
+                    <div id="turn-info" class="alert alert-info py-2 text-center text-dark"></div>
+
+                    <div id="message-log" class="p-2 border border-secondary rounded overflow-auto" style="height: 150px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        var socket = io();
+        var roomId = "{{ room.id }}";
+        var board = {};
+        var currentUserId = "{{ current_user.id }}";
+        var gameState = null;
+
+        socket.on('connect', function() {
+            socket.emit('join', {room: roomId});
+        });
+
+        socket.on('game_update', function(data) {
+            console.log('Update:', data);
+            gameState = data;
+            board = data.board;
+            renderBoard();
+            updateUI();
+        });
+
+        socket.on('message', function(data) {
+            var log = document.getElementById('message-log');
+            log.innerHTML += '<div>> ' + data.msg + '</div>';
+            log.scrollTop = log.scrollHeight;
+        });
+
+        socket.on('error', function(data) {
+            alert(data.msg);
+        });
+
+        function renderBoard() {
+            var gridDiv = document.getElementById('hex-grid');
+            gridDiv.innerHTML = '';
+
+            for (var key in board) {
+                renderTile(gridDiv, key, board[key], false);
+            }
+
+            var isMyTurn = gameState.players[gameState.current_player_index] === currentUserId;
+            if (isMyTurn && gameState.state === 'PLACING_TILE' && gameState.valid_placements) {
+                gameState.valid_placements.forEach(pos => {
+                    renderTile(gridDiv, pos.q + ',' + pos.r, gameState.current_tile, true);
+                });
+            }
+        }
+
+        function renderTile(gridDiv, key, tile, isGhost) {
+            var pos = key.split(',');
+            var q = parseInt(pos[0]);
+            var r = parseInt(pos[1]);
+
+            var container = document.createElement('div');
+            container.className = isGhost ? 'tile-container ghost-tile' : 'tile-container';
+            container.style.position = 'absolute';
+
+            // Highlight if part of last completed feature
+            if (gameState.last_completed_feature) {
+                var found = gameState.last_completed_feature.feature.some(p => p[0] == q && p[1] == r);
+                if (found) {
+                    container.classList.add('completed-highlight');
+                    container.style.outlineColor = gameState.last_completed_feature.color;
+                }
+            }
+
+            var size = 50;
+            var x = size * (Math.sqrt(3) * q + Math.sqrt(3)/2 * r) + 400;
+            var y = size * (3/2 * r) + 300;
+
+            container.style.left = (x - size) + 'px';
+            container.style.top = (y - size) + 'px';
+            container.style.width = (size * 2) + 'px';
+            container.style.height = (size * 2) + 'px';
+
+            var tileImg = document.createElement('img');
+            tileImg.src = '/static/tiles/' + tile.id + '.svg';
+            tileImg.style.width = '100%';
+            tileImg.style.height = '100%';
+            if(tile.rotation) tileImg.style.transform = 'rotate(' + (tile.rotation * 60) + 'deg)';
+            container.appendChild(tileImg);
+
+            if (isGhost) {
+                container.onclick = function() {
+                    socket.emit('place_tile', {room: roomId, q: q, r: r});
+                };
+            } else {
+                gameState.meeples.forEach(m => {
+                    if (m.q == q && m.r == r) {
+                        var meeple = document.createElement('div');
+                        meeple.style.position = 'absolute';
+                        meeple.style.width = '24px';
+                        meeple.style.height = '24px';
+                        meeple.style.background = gameState.player_colors[m.user_id] || '#ffc107';
+                        meeple.style.border = '2px solid #fff';
+                        meeple.style.borderRadius = '50%';
+                        meeple.style.zIndex = '10';
+
+                        var angle = (m.side == 6) ? 0 : (m.side * 60);
+                        var dist = (m.side == 6) ? 0 : 35;
+                        var mx = size - 12 + dist * Math.cos(angle * Math.PI / 180);
+                        var my = size - 12 + dist * Math.sin(angle * Math.PI / 180);
+                        meeple.style.left = mx + 'px';
+                        meeple.style.top = my + 'px';
+                        container.appendChild(meeple);
+                    }
+                });
+            }
+
+            gridDiv.appendChild(container);
+        }
+
+        function updateUI() {
+            var turnInfo = document.getElementById('turn-info');
+            var isMyTurn = gameState.players[gameState.current_player_index] === currentUserId;
+            var stateText = document.getElementById('current-state-text');
+            var rotateBtn = document.getElementById('rotate-btn');
+            var meepleSelection = document.getElementById('meeple-selection');
+            var nextTileImg = document.getElementById('next-tile-img');
+            var overlay = document.getElementById('color-overlay');
+
+            if (gameState.state === 'SELECTING_COLORS') {
+                overlay.style.display = 'flex';
+                var info = document.getElementById('color-selection-info');
+                var currentSelectorId = gameState.players[gameState.current_player_index];
+                info.innerText = (currentSelectorId === currentUserId) ? "Ваша очередь выбирать цвет!" : "Ожидание выбора цвета: " + gameState.player_names[currentSelectorId];
+
+                var options = document.getElementById('color-options');
+                options.innerHTML = '';
+                gameState.available_colors.forEach(c => {
+                    var btn = document.createElement('button');
+                    btn.className = 'btn';
+                    btn.style.background = c.hex;
+                    btn.style.width = '60px'; btn.style.height = '60px';
+                    btn.style.border = '3px solid #fff';
+                    btn.title = c.name;
+
+                    var isTaken = Object.values(gameState.player_colors).includes(c.hex);
+                    if (isTaken) {
+                        btn.style.opacity = '0.3';
+                        btn.disabled = true;
+                    } else {
+                        btn.onclick = function() { socket.emit('select_color', {room: roomId, color: c.hex}); };
+                    }
+                    options.appendChild(btn);
+                });
+            } else {
+                overlay.style.display = 'none';
+            }
+
+            if (gameState.state === 'PLACING_TILE') {
+                stateText.innerText = "Размещение плитки";
+                meepleSelection.style.display = 'none';
+                rotateBtn.disabled = !isMyTurn;
+                if (gameState.current_tile) {
+                    nextTileImg.src = '/static/tiles/' + gameState.current_tile.id + '.svg';
+                    nextTileImg.style.display = 'block';
+                    if(gameState.current_tile.rotation) nextTileImg.style.transform = 'rotate(' + (gameState.current_tile.rotation * 60) + 'deg)';
+                    else nextTileImg.style.transform = 'none';
+                } else {
+                    nextTileImg.style.display = 'none';
+                }
+            } else if (gameState.state === 'PLACING_MEEPLE') {
+                stateText.innerText = "Размещение мипла";
+                nextTileImg.style.display = 'none';
+                rotateBtn.disabled = true;
+                meepleSelection.style.display = isMyTurn ? 'block' : 'none';
+            } else if (gameState.state === 'GAME_OVER') {
+                stateText.innerText = "ИГРА ОКОНЧЕНА";
+            }
+
+            if (isMyTurn) {
+                turnInfo.className = "alert alert-warning py-2 text-center fw-bold text-dark";
+                turnInfo.innerText = "ВАШ ХОД!";
+            } else {
+                var currentUserId_turn = gameState.players[gameState.current_player_index];
+                var currentUserName = gameState.player_names[currentUserId_turn] || "Игрок";
+                turnInfo.className = "alert alert-info py-2 text-center text-dark";
+                turnInfo.innerText = "Ход пользователя: " + currentUserName;
+            }
+
+            var scoresDiv = document.getElementById('player-scores');
+            scoresDiv.innerHTML = '';
+            for (var i = 0; i < gameState.players.length; i++) {
+                var uid = gameState.players[i];
+                var uname = gameState.player_names[uid] || "Игрок";
+                var color = gameState.player_colors[uid] || '#999';
+                scoresDiv.innerHTML += '<div class="d-flex justify-content-between align-items-center mb-1">' +
+                    '<span style="color:' + color + '; font-weight:bold;">' + uname + '</span>' +
+                    '<span class="badge bg-secondary">' + gameState.scores[uid] + '</span></div>';
+            }
+        }
+
+        document.getElementById('rotate-btn').onclick = function() {
+            socket.emit('rotate_tile', {room: roomId});
+        };
+
+        function sendPlaceMeeple(side) {
+            socket.emit('place_meeple', {room: roomId, side: side});
+        }
+
+        function sendSkipMeeple() {
+            socket.emit('skip_meeple', {room: roomId});
+        }
+    </script>
+</body>
+</html>
