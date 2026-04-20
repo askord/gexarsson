@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Админка: Тайлы - Carcassonne Hex</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container">
+            <span class="navbar-brand">Управление изображениями тайлов</span>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light btn-sm">В лобби</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            {% for tile in tiles %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ tile.id }}</h5>
+                        <div class="mb-3 text-center" style="height: 100px;">
+                            {% if tile.id in custom_images %}
+                                <img src="{{ url_for('static', filename='custom_tiles/' + custom_images[tile.id]) }}" style="max-height: 100%; max-width: 100%;">
+                            {% else %}
+                                <img src="{{ url_for('static', filename='tiles/' + tile.id + '.svg') }}" style="max-height: 100%; max-width: 100%;">
+                            {% endif %}
+                        </div>
+                        <form action="{{ url_for('admin_tiles') }}" method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="tile_id" value="{{ tile.id }}">
+                            <div class="mb-3">
+                                <input type="file" name="file" class="form-control form-control-sm" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm w-100">Загрузить картинку</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

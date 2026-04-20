@@ -1,7 +1,10 @@
-from flask import render_template, redirect, url_for, request, flash
+import os
+from flask import render_template, redirect, url_for, request, flash, current_app, abort
 from flask_login import login_user, logout_user, login_required, current_user
+from werkzeug.utils import secure_filename
 from . import db
-from .models import User, Room
+from .models import User, Room, TileImage
+from .game.tiles import TILES
 
 def init_routes(app):
     @app.route('/')
@@ -65,4 +68,34 @@ def init_routes(app):
     @login_required
     def game(room_id):
         room = Room.query.get_or_404(room_id)
-        return render_template('game.html', room=room)
+        # Get custom images
+        custom_images = {ti.tile_id: ti.image_filename for ti in TileImage.query.all()}
+        return render_template('game.html', room=room, custom_images=custom_images)
+
+    @app.route('/admin/tiles', methods=['GET', 'POST'])
+    @login_required
+    def admin_tiles():
+        if not current_user.is_admin:
+            abort(403)
+
+        if request.method == 'POST':
+            tile_id = request.form.get('tile_id')
+            file = request.files.get('file')
+            if file and tile_id:
+                filename = secure_filename(file.filename)
+                upload_folder = os.path.join(current_app.static_folder, 'custom_tiles')
+                os.makedirs(upload_folder, exist_ok=True)
+                file.save(os.path.join(upload_folder, filename))
+
+                ti = TileImage.query.filter_by(tile_id=tile_id).first()
+                if ti:
+                    ti.image_filename = filename
+                else:
+                    ti = TileImage(tile_id=tile_id, image_filename=filename)
+                    db.session.add(ti)
+                db.session.commit()
+                flash(f'Изображение для {tile_id} успешно обновлено')
+            return redirect(url_for('admin_tiles'))
+
+        custom_images = {ti.tile_id: ti.image_filename for ti in TileImage.query.all()}
+        return render_template('admin_tiles.html', tiles=TILES, custom_images=custom_images)

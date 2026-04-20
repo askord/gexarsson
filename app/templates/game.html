@@ -6,12 +6,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        body { background-color: #343a40; color: white; }
         #game-board {
-            background: #2b3035;
-            border: 2px solid #495057;
-            border-radius: 8px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
             cursor: grab;
             user-select: none;
         }
@@ -42,10 +37,12 @@
         </div>
     </div>
 
-    <nav class="navbar navbar-dark bg-black shadow-sm mb-3">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
         <div class="container">
-            <span class="navbar-brand mb-0 h1">Комната: {{ room.name }}</span>
-            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light btn-sm">В лобби</a>
+            <a class="navbar-brand" href="#">Комната: {{ room.name }}</a>
+            <div class="ms-auto text-light">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-light ms-2">В лобби</a>
+            </div>
         </div>
     </nav>
 
@@ -58,7 +55,7 @@
                 </div>
             </div>
             <div class="col-lg-3">
-                <div class="side-ui shadow">
+                <div class="side-ui shadow card p-3">
                     <div id="status-panel" class="mb-4">
                         <h5 id="current-state-text" class="text-warning mb-3">Загрузка...</h5>
                         <div class="d-flex align-items-center justify-content-center mb-3">
@@ -105,6 +102,7 @@
         var board = {};
         var currentUserId = "{{ current_user.id }}";
         var gameState = null;
+        var customImages = {{ custom_images|tojson }};
 
         // Panning state
         var isDragging = false;
@@ -136,10 +134,17 @@
         }
 
         function resetPan() {
-            translateX = 0;
-            translateY = 0;
+            const rect = gameBoard.getBoundingClientRect();
+            // (0,0) is at 400, 300 in hex-grid coordinates.
+            translateX = rect.width / 2 - 400;
+            translateY = rect.height / 2 - 300;
             updateGridTransform();
         }
+
+        // Center on start
+        window.addEventListener('load', () => {
+            setTimeout(resetPan, 100);
+        });
 
         socket.on('connect', function() {
             socket.emit('join', {room: roomId});
@@ -207,7 +212,11 @@
             container.style.height = (size * 2) + 'px';
 
             var tileImg = document.createElement('img');
-            tileImg.src = '/static/tiles/' + tile.id + '.svg';
+            if (customImages[tile.id]) {
+                tileImg.src = '/static/custom_tiles/' + customImages[tile.id];
+            } else {
+                tileImg.src = '/static/tiles/' + tile.id + '.svg';
+            }
             tileImg.style.width = '100%';
             tileImg.style.height = '100%';
             if(tile.rotation) tileImg.style.transform = 'rotate(' + (tile.rotation * 60) + 'deg)';
@@ -299,7 +308,11 @@
                 meepleSelection.style.display = 'none';
                 rotateBtn.disabled = !isMyTurn;
                 if (gameState.current_tile) {
-                    nextTileImg.src = '/static/tiles/' + gameState.current_tile.id + '.svg';
+                    if (customImages[gameState.current_tile.id]) {
+                        nextTileImg.src = '/static/custom_tiles/' + customImages[gameState.current_tile.id];
+                    } else {
+                        nextTileImg.src = '/static/tiles/' + gameState.current_tile.id + '.svg';
+                    }
                     nextTileImg.style.display = 'block';
                     if(gameState.current_tile.rotation) nextTileImg.style.transform = 'rotate(' + (gameState.current_tile.rotation * 60) + 'deg)';
                     else nextTileImg.style.transform = 'none';
