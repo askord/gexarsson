@@ -12,6 +12,11 @@
             border: 2px solid #495057;
             border-radius: 8px;
             box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+            cursor: grab;
+            user-select: none;
+        }
+        #game-board:active {
+            cursor: grabbing;
         }
         .tile-container { transition: filter 0.2s; }
         .tile-container:hover { filter: brightness(1.2); cursor: pointer; }
@@ -48,7 +53,8 @@
         <div class="row">
             <div class="col-lg-9 mb-3">
                 <div id="game-board" style="position: relative; width: 100%; height: 700px; overflow: hidden;">
-                    <div id="hex-grid" style="position: absolute; width: 100%; height: 100%;"></div>
+                    <div id="hex-grid" style="position: absolute; width: 100%; height: 100%; transform-origin: 0 0;"></div>
+                    <button class="btn btn-sm btn-outline-light" style="position: absolute; bottom: 10px; right: 10px; z-index: 100;" onclick="resetPan()">Центрировать</button>
                 </div>
             </div>
             <div class="col-lg-3">
@@ -99,6 +105,41 @@
         var board = {};
         var currentUserId = "{{ current_user.id }}";
         var gameState = null;
+
+        // Panning state
+        var isDragging = false;
+        var startX, startY;
+        var translateX = 0, translateY = 0;
+
+        const gameBoard = document.getElementById('game-board');
+        const hexGrid = document.getElementById('hex-grid');
+
+        gameBoard.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateGridTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        function updateGridTransform() {
+            hexGrid.style.transform = `translate(${translateX}px, ${translateY}px)`;
+        }
+
+        function resetPan() {
+            translateX = 0;
+            translateY = 0;
+            updateGridTransform();
+        }
 
         socket.on('connect', function() {
             socket.emit('join', {room: roomId});
@@ -184,7 +225,8 @@
                         meeple.style.width = '24px';
                         meeple.style.height = '24px';
                         meeple.style.background = gameState.player_colors[m.user_id] || '#ffc107';
-                        meeple.style.border = '2px solid #fff';
+                        meeple.style.border = '2px solid rgba(255,255,255,0.8)';
+                        meeple.style.boxShadow = '0 0 5px rgba(0,0,0,0.5)';
                         meeple.style.borderRadius = '50%';
                         meeple.style.zIndex = '10';
 
@@ -204,12 +246,24 @@
 
         function updateUI() {
             var turnInfo = document.getElementById('turn-info');
-            var isMyTurn = gameState.players[gameState.current_player_index] === currentUserId;
+            var currentPlayerId = gameState.players[gameState.current_player_index];
+            var isMyTurn = currentPlayerId === currentUserId;
             var stateText = document.getElementById('current-state-text');
             var rotateBtn = document.getElementById('rotate-btn');
             var meepleSelection = document.getElementById('meeple-selection');
             var nextTileImg = document.getElementById('next-tile-img');
             var overlay = document.getElementById('color-overlay');
+
+            // Update meeple button colors
+            var myColor = gameState.player_colors[currentPlayerId] || '#17a2b8';
+            document.querySelectorAll('.meeple-btn').forEach(btn => {
+                if (btn.classList.contains('btn-outline-info') || btn.classList.contains('btn-outline-secondary')) {
+                   btn.style.color = myColor;
+                   btn.style.borderColor = myColor;
+                   btn.onmouseover = () => { btn.style.backgroundColor = myColor; btn.style.color = '#fff'; };
+                   btn.onmouseout = () => { btn.style.backgroundColor = 'transparent'; btn.style.color = myColor; };
+                }
+            });
 
             if (gameState.state === 'SELECTING_COLORS') {
                 overlay.style.display = 'flex';
