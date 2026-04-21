@@ -25,4 +25,13 @@ def create_app():
         routes.init_routes(app)
         db.create_all()
 
+        # Simple migration for is_admin column
+        from sqlalchemy import text
+        try:
+            db.session.execute(text("ALTER TABLE user ADD COLUMN is_admin BOOLEAN DEFAULT 0"))
+            db.session.commit()
+        except Exception:
+            # Column probably already exists
+            db.session.rollback()
+
     return app

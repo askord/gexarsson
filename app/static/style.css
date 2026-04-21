@@ -1,9 +1,46 @@
+:root {
+    --medieval-green: #2d5a27;
+    --medieval-brown: #4a3428;
+    --medieval-tan: #e8dcc4;
+    --medieval-gold: #c5a059;
+    --medieval-parchment: #fdf5e6;
+}
+
+body {
+    background-color: var(--medieval-brown);
+    background-image: url("https://www.transparenttextures.com/patterns/dark-wood.png");
+    color: var(--medieval-parchment);
+    font-family: 'Georgia', serif;
+}
+
+.card {
+    background-color: var(--medieval-parchment) !important;
+    color: var(--medieval-brown) !important;
+    border: 3px solid var(--medieval-gold);
+    box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
+}
+
+.navbar {
+    background-color: var(--medieval-brown) !important;
+    border-bottom: 4px solid var(--medieval-gold);
+}
+
+.btn-primary {
+    background-color: var(--medieval-green);
+    border-color: var(--medieval-gold);
+}
+
+.btn-primary:hover {
+    background-color: #3d7a35;
+    border-color: #fdf5e6;
+}
+
 #game-board {
-    width: 1000px;
-    height: 800px;
-    background: #f0f0f0;
-    position: relative;
-    overflow: scroll;
+    background-color: #2e4a2b;
+    background-image: url("https://www.transparenttextures.com/patterns/grass.png");
+    border: 8px solid var(--medieval-gold);
+    border-radius: 12px;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
 }
 .tile {
     position: absolute;

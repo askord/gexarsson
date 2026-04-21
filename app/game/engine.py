@@ -42,6 +42,14 @@ class GameEngine:
             self.players.append(user_id)
             self.player_names[user_id] = username
             self.scores[user_id] = 0
+
+            if self.state != 'SELECTING_COLORS':
+                # Assign first available color if player joins late
+                taken_colors = set(self.player_colors.values())
+                for color in self.COLORS:
+                    if color['hex'] not in taken_colors:
+                        self.player_colors[user_id] = color['hex']
+                        break
             return True
         return False
 
